@@ -40,10 +40,10 @@
 
         // Function to fetch sensor data from the server
         function fetchSensorData() {
-            fetch('', {
+            fetch('http://192.168.137.111:3000/sensor-data', {
                 method: 'GET',
                 headers: {
-                    'Authorization': 'Bearer' // Fix the token here
+                    'Authorization': 'Bearer BGX2dTRJ5Jn0JZEOU7luWE9Mh82zNcdKFWKGF3DFRqBTz6SVgs21IT8TUTRAXvFHud2X4bNSWi0NDmFKYgRUgsdGZl3eGFnQpeKC1oPn76Uw2dO7xPk8VyXQqCniiyi0' 
                 }
             })
             .then(response => {
