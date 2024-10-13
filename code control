@@ -1,0 +1,6 @@
+include <Servo.h> // เรียกใช้ไลบรารี Servo
+
+Servo myservo; // สร้างออบเจ็กต์ Servo
+
+
+
