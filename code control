@@ -1,6 +1,6 @@
+// servo
 include <Servo.h> // เรียกใช้ไลบรารี Servo
-
-Servo myservo; // สร้างออบเจ็กต์ Servo
+Servo myservo ; // สร้างออบเจ็กต์ Servo
 
 // กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
 define trigPin1 12 // D6
