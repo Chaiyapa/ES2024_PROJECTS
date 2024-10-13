@@ -54,3 +54,11 @@ void loop() {
     delay(100);
   }
 }
+
+// ฟังก์ชันสำหรับวัดระยะห่างด้วย Ultrasonic sensor
+void SonarSensor(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
