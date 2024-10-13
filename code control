@@ -29,3 +29,9 @@ void loop() {
   SonarSensor(trigPin2, echoPin2);
   InSensor = distance;   // เก็บค่าจาก Ultrasonic ตัวที่ 2
 
+  // แสดงค่าระยะทางจากเซ็นเซอร์ทั้งสอง
+  Serial.print("OutSensor = ");
+  Serial.println(OutSensor);
+  Serial.print("InSensor = ");
+  Serial.println(InSensor);
+  delay(100);
