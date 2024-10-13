@@ -35,3 +35,22 @@ void loop() {
   Serial.print("InSensor = ");
   Serial.println(InSensor);
   delay(100);
+
+
+  // ตรวจสอบค่าระยะห่างเพื่อควบคุมมุมของเซอร์โวมอเตอร์
+   if (OutSensor > 30) {
+    myservo.write(95);  // กำหนดมุมเซอร์โวเป็น 95 องศาเมื่อ OutSensor มากกว่า 30 cm
+    Serial.print("OutSensor: ");
+    Serial.println(OutSensor);
+    Serial.println(" --- ");
+  } 
+  else if (OutSensor <= 30 && OutSensor != 0) {
+    myservo.write(0);  // กำหนดมุมเซอร์โวเป็น 0 องศาเมื่อ OutSensor <= 30 cm
+    Serial.print("OutSensor: ");
+    Serial.println(OutSensor);
+    Serial.print("InSensor: ");
+    Serial.println(InSensor);
+    Serial.println(" --- ");
+    delay(100);
+  }
+}
