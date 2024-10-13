@@ -8,4 +8,16 @@ define echoPin1 13 // D7
 
 define trigPin2 5 // D1
 define echoPin2 6 // D0
+long duration, distance, OutSensor, InSensor;
+
+void setup() {
+  Serial.begin(9600);        // เริ่มต้น Serial communication ที่บอดเรต 9600
+  myservo.attach(14);         // เชื่อมต่อเซอร์โวมอเตอร์ที่ขา D5
+
+  // ตั้งค่า pinMode สำหรับเซ็นเซอร์อัลตราโซนิก
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+}
 
