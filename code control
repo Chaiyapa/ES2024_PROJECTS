@@ -21,3 +21,11 @@ void setup() {
   pinMode(echoPin2, INPUT);
 }
 
+void loop() {
+  // อ่านค่าจากเซ็นเซอร์ตัวที่ 1 และตัวที่ 2
+  SonarSensor(trigPin1, echoPin1);
+  OutSensor = distance;  // เก็บค่าจาก Ultrasonic ตัวที่ 1
+
+  SonarSensor(trigPin2, echoPin2);
+  InSensor = distance;   // เก็บค่าจาก Ultrasonic ตัวที่ 2
+
