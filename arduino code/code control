@@ -3,11 +3,10 @@ include <Servo.h> // เรียกใช้ไลบรารี Servo
 Servo myservo ; // สร้างออบเจ็กต์ Servo
 
 // กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
-define trigPin1 12 // D6
-define echoPin1 13 // D7
-
-define trigPin2 5 // D1
-define echoPin2 6 // D0
+#define trigPin1 14  // เซ็นเซอร์วัดระยะขยะในถัง
+#define echoPin1 27  // เซ็นเซอร์วัดระยะขยะในถัง
+#define trigPin2 26  // เซ็นเซอร์วัดระยะคน
+#define echoPin2 25  // เซ็นเซอร์วัดระยะคน
 long duration, distance, OutSensor, InSensor;
 
 void setup() {
