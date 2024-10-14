@@ -1,0 +1,96 @@
+#include <ESP32Servo.h>  // ใช้ไลบรารี ESP32Servo
+
+// สร้างออบเจ็กต์ Servo
+Servo myservo;  
+
+// กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
+#define trigPin1 26  // เซ็นเซอร์วัดระยะคน (OUT)
+#define echoPin1 25  // เซ็นเซอร์วัดระยะคน (OUT)
+
+#define trigPin2 14  // เซ็นเซอร์วัดระยะขยะในถัง (IN)
+#define echoPin2 27  // เซ็นเซอร์วัดระยะขยะในถัง (IN)
+
+long duration = 0, distance = 0, OutSensor = 0, InSensor = 0;
+
+void setup() {
+  Serial.begin(115200);  // เริ่มต้น Serial communication
+  myservo.attach(5);     // เชื่อมต่อเซอร์โวกับขา D5
+
+  // ตั้งค่า pinMode สำหรับเซ็นเซอร์อัลตราโซนิก
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+
+  myservo.write(0);  // ตั้งค่าเซอร์โวเริ่มต้นที่ 0 องศา
+}
+
+void loop() {
+  OutSensor = measureDistance(trigPin1, echoPin1);  // วัดระยะคน
+  InSensor = measureDistance(trigPin2, echoPin2);   // วัดระยะขยะในถัง
+
+  // ควบคุมเซอร์โวมอเตอร์ตามระยะทางจากเซ็นเซอร์ OutSensor
+  if (OutSensor < 30 && OutSensor >= 0) {
+    myservo.write(95);  // หมุนเซอร์โวไปที่ 95 องศา
+    Serial.println("Servo: Open (95°)");
+  } 
+  else if (OutSensor >= 30) {
+    myservo.write(0);   // หมุนเซอร์โวไปที่ 0 องศา
+    Serial.println("Servo: Close (0°)");
+  } 
+
+  // แสดงสถานะของเซอร์โว
+  if (OutSensor < 30) {
+    Serial.println("Motor Status: Open");
+  } 
+  else {
+    Serial.println("Motor Status: Closed");
+  }
+
+  // ตรวจสอบสถานะ InSensor
+  if (InSensor <= 10 && InSensor >= 0) {
+    Serial.println("InSensor: FULL");  // แสดงสถานะ FULL ถ้าขยะเต็ม
+  }
+
+  // แสดงข้อมูลเซ็นเซอร์
+  printSensorData(OutSensor, InSensor);
+  delay(600);  // หน่วงเวลา 600ms ก่อนรอบถัดไป
+}
+
+// ฟังก์ชันสำหรับวัดระยะทางด้วย Ultrasonic sensor
+long measureDistance(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH, 30000);
+
+  if (duration == 0) {
+    return -1;  // ถ้าไม่มีการตอบสนอง ให้ส่งค่า -1
+  } else {
+    return (duration / 2) / 29.1;  // แปลงเวลาเป็นระยะทาง (cm)
+  }
+}
+
+// ฟังก์ชันแสดงผลข้อมูลเซ็นเซอร์
+void printSensorData(long OutSensor, long InSensor) {
+  if (OutSensor >= 0) {
+    Serial.print("OutSensor: ");
+    Serial.print(OutSensor);
+    Serial.println(" cm");
+  } else {
+    Serial.println("OutSensor: No valid reading");
+  }
+
+  if (InSensor >= 0) {
+    Serial.print("InSensor: ");
+    Serial.print(InSensor);
+    Serial.println(" cm");
+  } else {
+    Serial.println("InSensor: No valid reading");
+  }
+
+  Serial.println("---");  // แยกบล็อกข้อมูลให้อ่านง่ายขึ้น
+}
