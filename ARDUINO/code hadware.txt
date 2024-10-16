@@ -1,0 +1,74 @@
+#include <Servo.h> // เรียกใช้ไลบรารี Servo
+
+Servo myservo; // สร้างออบเจ็กต์ Servo
+
+// กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
+#define trigPin1 5 // D6
+#define echoPin1 16 // D7
+
+#define trigPin2 12 // D1
+#define echoPin2 13 // D0
+#define SERVO_PIN 14 //D5
+
+long duration, distance, OutSensor, InSensor;
+
+void setup() {
+  Serial.begin(9600);        // เริ่มต้น Serial communication ที่บอดเรต 9600
+  myservo.attach(14);         // เชื่อมต่อเซอร์โวมอเตอร์ที่ขา D5
+
+  // ตั้งค่า pinMode สำหรับเซ็นเซอร์อัลตราโซนิก
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+}
+
+void loop() {
+  // อ่านค่าจากเซ็นเซอร์ตัวที่ 1 และตัวที่ 2
+  SonarSensor(trigPin1, echoPin1);
+  OutSensor = distance;  // เก็บค่าจาก Ultrasonic ตัวที่ 1
+
+  SonarSensor(trigPin2, echoPin2);
+  InSensor = distance;   // เก็บค่าจาก Ultrasonic ตัวที่ 2
+
+//  // แสดงค่าระยะทางจากเซ็นเซอร์ทั้งสอง
+//  Serial.print("OutSensor = ");
+//  Serial.println(OutSensor);
+//  Serial.print("InSensor = ");
+//  Serial.println(InSensor);
+//  delay(1000);
+
+
+  // ตรวจสอบค่าระยะห่างเพื่อควบคุมมุมของเซอร์โวมอเตอร์
+   if (OutSensor > 30) {
+    myservo.write(95);  // กำหนดมุมเซอร์โวเป็น 95 องศาเมื่อ OutSensor มากกว่า 30 cm
+    Serial.print("OutSensor: ");
+    Serial.print(OutSensor);
+    Serial.print(" ___close ");
+  } 
+  else if ((OutSensor <= 30)&& (OutSensor != 0) )
+  {
+    myservo.write(0);  // กำหนดมุมเซอร์โวเป็น 0 องศาเมื่อ OutSensor <= 30 cm
+    Serial.print("OutSensor: ");
+    Serial.print(OutSensor);
+    Serial.print(" ___open");
+    Serial.print("  ");
+  }
+    Serial.print("  ");
+    Serial.print("InSensor: ");
+    Serial.print(InSensor);
+    Serial.println("  ");
+    delay(500);
+    
+}
+
+// ฟังก์ชันสำหรับวัดระยะห่างด้วย Ultrasonic sensor
+void SonarSensor(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH); // วัดเวลาที่คลื่นสะท้อนกลับมา
+  distance = (duration / 2) / 29.1;  // แปลงเวลาเป็นระยะทาง (หน่วย: cm)
+}
