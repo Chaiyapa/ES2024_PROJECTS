@@ -5,6 +5,7 @@ Servo myservo ; // สร้างออบเจ็กต์ Servo
 // กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
 #define trigPin1 14  // เซ็นเซอร์วัดระยะขยะในถัง
 #define echoPin1 27  // เซ็นเซอร์วัดระยะขยะในถัง
+
 #define trigPin2 26  // เซ็นเซอร์วัดระยะคน
 #define echoPin2 25  // เซ็นเซอร์วัดระยะคน
 long duration, distance, OutSensor, InSensor;
