@@ -1,67 +1,125 @@
-// servo
-include <Servo.h> // เรียกใช้ไลบรารี Servo
-Servo myservo ; // สร้างออบเจ็กต์ Servo
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <Servo.h>
 
-// กำหนดขาเชื่อมต่อของเซ็นเซอร์อัลตราโซนิก
-#define trigPin1 14  // เซ็นเซอร์วัดระยะขยะในถัง
-#define echoPin1 27  // เซ็นเซอร์วัดระยะขยะในถัง
+// WiFi credentials
+#define WIFI_SSID "hhh"
+#define WIFI_PASS "hhhhhhhh"
+#define API_KEY "BGX2dTRJ5Jn0JZEOU7luWE9Mh82zNcdKFWKGF3DFRqBTz6SVgs21IT8TUTRAXvFHud2X4bNSWi0NDmFKYgRUgsdGZl3eGFnQpeKC1oPn76Uw2dO7xPk8VyXQqCniiyi0"
 
-#define trigPin2 26  // เซ็นเซอร์วัดระยะคน
-#define echoPin2 25  // เซ็นเซอร์วัดระยะคน
-long duration, distance, OutSensor, InSensor;
+// Ultrasonic sensor pins
+#define trigPin1 5  // D6
+#define echoPin1 16 // D7
+
+#define trigPin2 12 // D1
+#define echoPin2 13 // D0
+
+// Servo motor pin
+#define SERVO_PIN 14  // D5
+
+// Servo instance
+Servo myservo;
+WiFiClient wifiClient;
+
+// Function to measure distance using an ultrasonic sensor
+float measureDistance(int trigPin, int echoPin) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    long duration = pulseIn(echoPin, HIGH);  // Measure echo time
+    float distance = (duration * 0.034) / 2; // Convert to cm
+    return distance;
+}
+
+// Function to send data to the backend
+void send_sensor_data(float distance1, float distance2) {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        String url = "http://192.168.137.111:3000/sensor-data";  // Replace with backend IP
+
+        // JSON payload
+        String post_data = "{\"distance1\":" + String(distance1, 2) +
+                           ", \"distance2\":" + String(distance2, 2) +
+                           ", \"apiKey\":\"" + API_KEY + "\"}";
+
+        http.begin(wifiClient, url);  // Pass WiFiClient instance and URL
+        http.addHeader("Content-Type", "application/json");
+
+        int httpResponseCode = http.POST(post_data);
+
+        if (httpResponseCode > 0) {
+            Serial.printf("HTTP Response code: %d\n", httpResponseCode);
+            if (httpResponseCode == 200) {
+                Serial.println("Data sent successfully");
+            }
+        } else {
+            Serial.printf("Error sending data: %s\n", http.errorToString(httpResponseCode).c_str());
+        }
+        http.end();
+    } else {
+        Serial.println("WiFi not connected");
+    }
+}
 
 void setup() {
-  Serial.begin(115200);        // เริ่มต้น Serial communication ที่บอดเรต 11520
-  myservo.attach(14);         // เชื่อมต่อเซอร์โวมอเตอร์ที่ขา D5
+    Serial.begin(115200);  // Start serial communication
 
-  // ตั้งค่า pinMode สำหรับเซ็นเซอร์อัลตราโซนิก
-  pinMode(trigPin1, OUTPUT);
-  pinMode(echoPin1, INPUT);
-  pinMode(trigPin2, OUTPUT);
-  pinMode(echoPin2, INPUT);
+    // Initialize ultrasonic sensor pins
+    pinMode(trigPin1, OUTPUT);
+    pinMode(echoPin1, INPUT);
+    pinMode(trigPin2, OUTPUT);
+    pinMode(echoPin2, INPUT);
+
+    // Attach the servo motor
+    myservo.attach(SERVO_PIN);
+
+    // Connect to WiFi
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.println("Connecting to WiFi...");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("\nConnected to WiFi!");
 }
 
 void loop() {
-  // อ่านค่าจากเซ็นเซอร์ตัวที่ 1 และตัวที่ 2
-  SonarSensor(trigPin1, echoPin1);
-  OutSensor = distance;  // เก็บค่าจาก Ultrasonic ตัวที่ 1
+    // Measure distances
+    float distance1 = measureDistance(trigPin1, echoPin1);
+    float distance2 = measureDistance(trigPin2, echoPin2);
 
-  SonarSensor(trigPin2, echoPin2);
-  InSensor = distance;   // เก็บค่าจาก Ultrasonic ตัวที่ 2
+    // Print distances to the serial monitor
+    Serial.printf("Distance 1: %.2f cm, Distance 2: %.2f cm\n", distance1, distance2);
 
-  // แสดงค่าระยะทางจากเซ็นเซอร์ทั้งสอง
-  Serial.print("OutSensor = ");
-  Serial.println(OutSensor);
-  Serial.print("InSensor = ");
-  Serial.println(InSensor);
-  delay(100);
+    // Control servo motor based on distance1
+    if (distance1 < 20) {
+        myservo.write(180);  // Rotate to 90 degrees
+        Serial.println("Motor Status: Open");
+    } else {
+        myservo.write(0);   // Rotate to 0 degrees
+        Serial.println("Motor Status: Closed");
+    }
 
+    // Check InSensor status
+     if (distance2 <= 10) {
+        Serial.println("InSensor: FULL");
+    } 
+      else if (distance2 > 10 && distance2 <= 15) {
+        Serial.println("InSensor: HALF");
+    } 
+      else if (distance2 > 15 && distance2 <= 18){
+        Serial.println("InSensor:little bit ");
+    }
+      else if (distance2 = 19) {
+        Serial.println("InSensor: EMPTY");
+    }
 
-  // ตรวจสอบค่าระยะห่างเพื่อควบคุมมุมของเซอร์โวมอเตอร์
-   if (OutSensor > 30) {
-    myservo.write(95);  // กำหนดมุมเซอร์โวเป็น 95 องศาเมื่อ OutSensor มากกว่า 30 cm
-    Serial.print("OutSensor: ");
-    Serial.println(OutSensor);
-    Serial.println(" --- ");
-  } 
-  else if (OutSensor <= 30 && OutSensor != 0) {
-    myservo.write(0);  // กำหนดมุมเซอร์โวเป็น 0 องศาเมื่อ OutSensor <= 30 cm
-    Serial.print("OutSensor: ");
-    Serial.println(OutSensor);
-    Serial.print("InSensor: ");
-    Serial.println(InSensor);
-    Serial.println(" --- ");
-    delay(100);
-  }
-}
+    // Send data to backend
+    send_sensor_data(distance1, distance2);
 
-// ฟังก์ชันสำหรับวัดระยะห่างด้วย Ultrasonic sensor
-void SonarSensor(int trigPin, int echoPin) {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH); // วัดเวลาที่คลื่นสะท้อนกลับมา
-  distance = (duration / 2) / 29.1;  // แปลงเวลาเป็นระยะทาง (หน่วย: cm)
+    delay(500);  // Wait 5 seconds before the next reading
 }
