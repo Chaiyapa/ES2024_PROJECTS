@@ -9,10 +9,11 @@
 #define API_KEY "BGX2dTRJ5Jn0JZEOU7luWE9Mh82zNcdKFWKGF3DFRqBTz6SVgs21IT8TUTRAXvFHud2X4bNSWi0NDmFKYgRUgsdGZl3eGFnQpeKC1oPn76Uw2dO7xPk8VyXQqCniiyi0"
 
 // Ultrasonic sensor pins
-#define trigPin1 5  // D6
-#define echoPin1 16 // D7
-#define trigPin2 12 // D1
-#define echoPin2 13 // D0
+#define trigPin1 5  // D6 OUT
+#define echoPin1 16 // D7 OUT
+
+#define trigPin2 12 // D1 IN
+#define echoPin2 13 // D0 IN
 
 // Servo motor pin
 #define SERVO_PIN 14  // D5
