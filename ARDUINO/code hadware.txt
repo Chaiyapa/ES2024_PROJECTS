@@ -11,6 +11,7 @@
 // Ultrasonic sensor pins
 #define TRIG_PIN_1 5   // D6
 #define ECHO_PIN_1 16  // D7
+
 #define TRIG_PIN_2 12  // D1
 #define ECHO_PIN_2 13  // D0
 
