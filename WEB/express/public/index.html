@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP8266 Sensor Data</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: url('https://4kwallpapers.com/images/wallpapers/forest-trees-light-2560x1440-9607.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff; /* White color for the title */
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); /* Shadow for better visibility */
+        }
+
+        #sensorData {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(40, 44, 52, 0.8); /* Dark semi-transparent background */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .sensor-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1); /* Light transparent background for each item */
+            border-left: 5px solid #007bff; /* Blue left border */
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .sensor-item:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Slightly brighter on hover */
+        }
+
+        .sensor-item strong {
+            display: inline-block;
+            width: 180px; /* Fixed width for labels */
+            color: #00bfff; /* Light blue color for labels */
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status.FULL {
+            color: red; /* FULL status - red */
+        }
+
+        .status.HALF {
+            color: orange; /* HALF status - orange */
+        }
+
+        .status.ALittleBit {
+            color: yellow; /* A Little Bit status - yellow */
+        }
+
+        .status.EMPTY {
+            color: green; /* EMPTY status - green */
+        }
+
+        .motor-status.OPEN {
+            color: whitesmoke; /* Open status - green */
+        }
+
+        .motor-status.CLOSED {
+            color: red; /* Closed status - red */
+        }
+    </style>
+</head>
+<body>
+    <h1>ESP8266 Sensor Data</h1>
+    <div id="sensorData">Loading sensor data...</div>
+
+    <script>
+        const sensorDataDiv = document.getElementById('sensorData');
+
+        // Function to fetch sensor data from the server
+        function fetchSensorData() {
+            fetch('http://192.168.137.111:3000/sensor-data', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer YOUR_ACCESS_TOKEN_HERE' // Use a placeholder for security
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                displaySensorData(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                sensorDataDiv.innerHTML = '<p style="color: red;">Error fetching sensor data</p>';
+            });
+        }
+
+        // Function to display sensor data
+        function displaySensorData(data) {
+            // Assign distance values
+            let outSensorStatus = data.distance1; // Stirring distance
+
+            // Set the InSensor status based on distance2
+            let inSensorStatus;
+            if (data.distance2 <= 10) {
+                inSensorStatus = "FULL";
+            } else if (data.distance2 > 10 && data.distance2 <= 15) {
+                inSensorStatus = "NEARLY FULL";
+            } else if (data.distance2 > 15 && data.distance2 <= 18) {
+                inSensorStatus = "A Little Bit";
+            } else if (data.distance2 === 19) {
+                inSensorStatus = "EMPTY";
+            } else {
+                inSensorStatus = "Unknown"; // Handle unexpected values
+            }
+
+            // Determine the Motor status based on distance1
+            let motorStatus = (data.distance1 < 20) ? "OPEN" : "CLOSED"; // Motor status
+
+            // Render the sensor data
+            sensorDataDiv.innerHTML = `
+                <h2>Current Sensor Data</h2>
+                <div class="sensor-item">
+                    <strong>Stirring Distance:</strong> ${outSensorStatus} cm
+                </div>
+                <div class="sensor-item">
+                    <strong>Status (BIN):</strong> <span class="status ${inSensorStatus}">${inSensorStatus}</span>
+                </div>
+                <div class="sensor-item">
+                    <strong>Motor Status:</strong> <span class="motor-status ${motorStatus}">${motorStatus}</span>
+                </div>
+                <div class="sensor-item">
+                    <strong>Last Updated:</strong> ${new Date().toLocaleTimeString()}
+                </div>
+            `;
+        }
+
+        // Fetch sensor data immediately and set up an interval to fetch it every 5 seconds
+        fetchSensorData();  // Fetch data immediately when the page loads
+        setInterval(fetchSensorData, 1000);  // Continue fetching data every 1 seconds
+    </script>
+</body>
+</html>
