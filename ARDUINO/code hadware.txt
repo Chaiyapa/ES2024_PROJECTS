@@ -11,7 +11,6 @@
 // Ultrasonic sensor pins
 #define TRIG_PIN_1 5   // D6
 #define ECHO_PIN_1 16  // D7
-
 #define TRIG_PIN_2 12  // D1
 #define ECHO_PIN_2 13  // D0
 
@@ -21,6 +20,13 @@
 // Servo instance
 Servo myservo;
 WiFiClient wifiClient;
+HTTPClient http;
+
+unsigned long lastSendTime = 0;  // Timestamp for the last data sent
+const unsigned long SEND_INTERVAL = 5000;  // 5-second interval
+
+float previousDistance1 = -1;  // Store previous distances to detect changes
+float previousDistance2 = -1;
 
 // Function to measure distance using an ultrasonic sensor
 float measureDistance(int trigPin, int echoPin) {
@@ -30,45 +36,39 @@ float measureDistance(int trigPin, int echoPin) {
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
 
-    long duration = pulseIn(echoPin, HIGH);  // Measure echo time
-    float distance = (duration * 0.034) / 2; // Convert to cm
-    return distance;
+    long duration = pulseIn(echoPin, HIGH, 30000);  // Timeout after 30ms
+    if (duration == 0) return -1;  // No echo received, return invalid distance
+    return (duration * 0.034) / 2; // Convert to cm
 }
 
 // Function to send data to the backend
 void sendSensorData(float distance1, float distance2) {
-    if (WiFi.status() == WL_CONNECTED) {
-        HTTPClient http;
-        String url = "http://192.168.137.111:3000/sensor-data";  // Replace with backend IP
-
-        // JSON payload
-        String post_data = "{\"distance1\":" + String(distance1, 2) +
-                           ", \"distance2\":" + String(distance2, 2) +
-                           ", \"apiKey\":\"" + API_KEY + "\"}";
-
-        http.begin(wifiClient, url);  // Pass WiFiClient instance and URL
-        http.addHeader("Content-Type", "application/json");
-
-        int httpResponseCode = http.POST(post_data);
-
-        if (httpResponseCode > 0) {
-            Serial.printf("HTTP Response code: %d\n", httpResponseCode);
-            if (httpResponseCode == 200) {
-                Serial.println("Data sent successfully");
-            }
-        } else {
-            Serial.printf("Error sending data: %s\n", http.errorToString(httpResponseCode).c_str());
-        }
-        http.end();
-    } else {
+    if (WiFi.status() != WL_CONNECTED) {
         Serial.println("WiFi not connected");
+        return;
     }
+
+    String url = "http://192.168.137.111:3000/sensor-data";
+    String postData = "{\"distance1\":" + String(distance1, 2) +
+                      ", \"distance2\":" + String(distance2, 2) +
+                      ", \"apiKey\":\"" + API_KEY + "\"}";
+
+    http.begin(wifiClient, url);
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = http.POST(postData);
+
+    if (httpResponseCode > 0) {
+        Serial.printf("HTTP Response code: %d\n", httpResponseCode);
+    } else {
+        Serial.printf("Error sending data: %s\n", http.errorToString(httpResponseCode).c_str());
+    }
+    http.end();
 }
 
 void setup() {
-    Serial.begin(115200);  // Start serial communication
+    Serial.begin(115200);
 
-    // Initialize ultrasonic sensor pins
+    // Initialize pins
     pinMode(TRIG_PIN_1, OUTPUT);
     pinMode(ECHO_PIN_1, INPUT);
     pinMode(TRIG_PIN_2, OUTPUT);
@@ -92,33 +92,39 @@ void loop() {
     float distance1 = measureDistance(TRIG_PIN_1, ECHO_PIN_1);
     float distance2 = measureDistance(TRIG_PIN_2, ECHO_PIN_2);
 
-    // Print distances to the serial monitor
-    Serial.printf("Distance 1: %.2f cm, Distance 2: %.2f cm\n", distance1, distance2);
-
-    // Control servo motor based on distance1
-    if (distance1 < 25) {
-        myservo.write(180);  // Rotate to 180 degrees (open position)
-        Serial.println("Motor Status: Open");
-    } else {
-        myservo.write(0);    // Rotate to 0 degrees (closed position)
-        Serial.println("Motor Status: Closed");
+    // Update servo motor only if distance1 has changed
+    if (distance1 != previousDistance1) {
+        if (distance1 > 0 && distance1 < 25) {
+            myservo.write(180);  // Open
+            Serial.println("Motor Status: Open");
+        } else {
+            myservo.write(0);  // Closed
+            Serial.println("Motor Status: Closed");
+        }
+        previousDistance1 = distance1;  // Update previous distance
     }
 
-    // Check InSensor status and print it
-    if (distance2 <= 10) {
-        Serial.println("InSensor: FULL");
-    } else if (distance2 > 10 && distance2 <= 15) {
-        Serial.println("InSensor: NEARLY FULL");
-    } else if (distance2 > 15 && distance2 <= 18) {
-        Serial.println("InSensor: A little bit");
-    } else if (distance2 == 19) {
-        Serial.println("InSensor: EMPTY");
-    } else {
-        Serial.println("InSensor: Unknown"); // Handle unexpected values
+    // Check InSensor status and print only if it changes
+    if (distance2 != previousDistance2) {
+        if (distance2 <= 10) {
+            Serial.println("InSensor: FULL");
+        } else if (distance2 > 10 && distance2 <= 15) {
+            Serial.println("InSensor: NEARLY FULL");
+        } else if (distance2 > 15 && distance2 <= 18) {
+            Serial.println("InSensor: A little bit");
+        } else if (distance2 == 19) {
+            Serial.println("InSensor: EMPTY");
+        } else {
+            Serial.println("InSensor: Unknown");
+        }
+        previousDistance2 = distance2;  // Update previous distance
     }
 
-    // Send data to backend
-    sendSensorData(distance1, distance2);
+    // Send data every 5 seconds
+    if (millis() - lastSendTime >= SEND_INTERVAL) {
+        sendSensorData(distance1, distance2);
+        lastSendTime = millis();  // Update the last send time
+    }
 
-    delay(1000);  // Wait 1 second before the next reading
+    delay(50);  // Small delay to prevent rapid looping
 }
