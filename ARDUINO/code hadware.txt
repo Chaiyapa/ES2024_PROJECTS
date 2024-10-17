@@ -9,14 +9,14 @@
 #define API_KEY "BGX2dTRJ5Jn0JZEOU7luWE9Mh82zNcdKFWKGF3DFRqBTz6SVgs21IT8TUTRAXvFHud2X4bNSWi0NDmFKYgRUgsdGZl3eGFnQpeKC1oPn76Uw2dO7xPk8VyXQqCniiyi0"
 
 // Ultrasonic sensor pins
-#define trigPin1 5  // D6
-#define echoPin1 16 // D7
+#define TRIG_PIN_1 5   // D6
+#define ECHO_PIN_1 16  // D7
 
-#define trigPin2 12 // D1
-#define echoPin2 13 // D0
+#define TRIG_PIN_2 12  // D1
+#define ECHO_PIN_2 13  // D0
 
 // Servo motor pin
-#define SERVO_PIN 14  // D5
+#define SERVO_PIN 14   // D5
 
 // Servo instance
 Servo myservo;
@@ -36,7 +36,7 @@ float measureDistance(int trigPin, int echoPin) {
 }
 
 // Function to send data to the backend
-void send_sensor_data(float distance1, float distance2) {
+void sendSensorData(float distance1, float distance2) {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         String url = "http://192.168.137.111:3000/sensor-data";  // Replace with backend IP
@@ -69,10 +69,10 @@ void setup() {
     Serial.begin(115200);  // Start serial communication
 
     // Initialize ultrasonic sensor pins
-    pinMode(trigPin1, OUTPUT);
-    pinMode(echoPin1, INPUT);
-    pinMode(trigPin2, OUTPUT);
-    pinMode(echoPin2, INPUT);
+    pinMode(TRIG_PIN_1, OUTPUT);
+    pinMode(ECHO_PIN_1, INPUT);
+    pinMode(TRIG_PIN_2, OUTPUT);
+    pinMode(ECHO_PIN_2, INPUT);
 
     // Attach the servo motor
     myservo.attach(SERVO_PIN);
@@ -89,65 +89,36 @@ void setup() {
 
 void loop() {
     // Measure distances
-    float distance1 = measureDistance(trigPin1, echoPin1);
-    float distance2 = measureDistance(trigPin2, echoPin2);
+    float distance1 = measureDistance(TRIG_PIN_1, ECHO_PIN_1);
+    float distance2 = measureDistance(TRIG_PIN_2, ECHO_PIN_2);
 
     // Print distances to the serial monitor
     Serial.printf("Distance 1: %.2f cm, Distance 2: %.2f cm\n", distance1, distance2);
 
     // Control servo motor based on distance1
     if (distance1 < 25) {
-        myservo.write(180);  // Rotate to 90 degrees
+        myservo.write(180);  // Rotate to 180 degrees (open position)
         Serial.println("Motor Status: Open");
     } else {
-        myservo.write(0);   // Rotate to 0 degrees
+        myservo.write(0);    // Rotate to 0 degrees (closed position)
         Serial.println("Motor Status: Closed");
     }
 
-    // Check InSensor status
-     if (distance2 <= 10) {
+    // Check InSensor status and print it
+    if (distance2 <= 10) {
         Serial.println("InSensor: FULL");
-    } 
-      else if (distance2 > 10 && distance2 <= 15) {
-        Serial.println("InSensor:NEARLY FULL");
-    } 
-      else if (distance2 > 15 && distance2 <= 18){
-        Serial.println("InSensor:little bit ");
-    }
-      else if (distance2 = 19) {
+    } else if (distance2 > 10 && distance2 <= 15) {
+        Serial.println("InSensor: NEARLY FULL");
+    } else if (distance2 > 15 && distance2 <= 18) {
+        Serial.println("InSensor: A little bit");
+    } else if (distance2 == 19) {
         Serial.println("InSensor: EMPTY");
+    } else {
+        Serial.println("InSensor: Unknown"); // Handle unexpected values
     }
 
     // Send data to backend
-    send_sensor_data(distance1, distance2);
+    sendSensorData(distance1, distance2);
 
-    delay(1000);  // Wait 5 seconds before the next reading
+    delay(1000);  // Wait 1 second before the next reading
 }
-
-void loop() {
-  // อ่านค่าจากเซ็นเซอร์ตัวที่ 1 และตัวที่ 2
-  SonarSensor(trigPin1, echoPin1);
-  OutSensor = distance;  // เก็บค่าจาก Ultrasonic ตัวที่ 1
-
-  SonarSensor(trigPin2, echoPin2);
-  InSensor = distance;   // เก็บค่าจาก Ultrasonic ตัวที่ 2
-
-  // ตรวจสอบค่าระยะห่างเพื่อควบคุมมุมของเซอร์โวมอเตอร์
-  if (OutSensor > 30) {
-    myservo.write(95);  // กำหนดมุมเซอร์โวเป็น 95 องศาเมื่อ OutSensor มากกว่า 30 cm
-    Serial.print("OutSensor: "); //add on
-    Serial.print(OutSensor);
-    Serial.print(" ___close ");
-  } else if ((OutSensor <= 30) && (OutSensor != 0)) {
-    myservo.write(0);  // กำหนดมุมเซอร์โวเป็น 0 องศาเมื่อ OutSensor <= 30 cm
-    Serial.print("OutSensor: "); // addon
-    Serial.print(OutSensor);
-    Serial.print(" ___close ");
-  }
-    Serial.print("  "); //addon
-    Serial.print("InSensor: ");
-    Serial.print(InSensor);
-    Serial.println("  ");
-    delay(500);
-  
-
